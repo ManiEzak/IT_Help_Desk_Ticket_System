@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Submit a Ticket — HelpDesk</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet"/>
+  <style>
+    :root{
+      --bg:#0f0e17;--surface:#1a1928;--surface2:#1e1d2e;
+      --border:#252438;--accent:#6c63ff;--accent2:#ff6584;
+      --green:#43e97b;--text:#e8e8f0;--muted:#6b6b80;--red:#ff4d6d;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;
+      min-height:100vh;display:flex;align-items:center;justify-content:center;
+      padding:32px 16px;position:relative;overflow-x:hidden}
+
+    body::before{content:'';position:fixed;inset:0;
+      background-image:linear-gradient(rgba(108,99,255,.06) 1px,transparent 1px),
+        linear-gradient(90deg,rgba(108,99,255,.06) 1px,transparent 1px);
+      background-size:40px 40px;animation:gridShift 20s linear infinite;pointer-events:none}
+    @keyframes gridShift{to{transform:translateY(40px)}}
+
+    .orb{position:fixed;border-radius:50%;filter:blur(80px);opacity:.2;pointer-events:none;animation:float 8s ease-in-out infinite}
+    .orb1{width:400px;height:400px;background:var(--accent);top:-100px;right:-80px}
+    .orb2{width:300px;height:300px;background:var(--accent2);bottom:-80px;left:-80px;animation-delay:-4s}
+    @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-20px)}}
+
+    .card{position:relative;z-index:10;background:var(--surface);border:1px solid var(--border);
+      border-radius:20px;padding:40px 36px;width:100%;max-width:520px;
+      box-shadow:0 40px 80px rgba(0,0,0,.5);animation:slideUp .5s cubic-bezier(.16,1,.3,1) both}
+    @keyframes slideUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+
+    .brand{display:flex;align-items:center;gap:12px;margin-bottom:28px}
+    .brand-icon{width:44px;height:44px;background:linear-gradient(135deg,var(--accent),var(--accent2));
+      border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px}
+    .brand h1{font-size:22px;font-weight:800}
+    .brand p{font-size:11px;color:var(--muted);font-family:'Space Mono',monospace;letter-spacing:.5px}
+
+    .form-group{margin-bottom:18px}
+    label{display:block;font-size:11px;font-weight:700;color:var(--muted);
+      text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;font-family:'Space Mono',monospace}
+    input,select,textarea{width:100%;background:var(--bg);border:1px solid var(--border);
+      border-radius:10px;padding:12px 14px;font-size:14px;font-family:'Syne',sans-serif;
+      color:var(--text);outline:none;transition:border-color .2s,box-shadow .2s}
+    input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(108,99,255,.15)}
+    input::placeholder,textarea::placeholder{color:var(--muted)}
+    select option{background:var(--bg)}
+    textarea{resize:vertical;min-height:100px}
+
+    /* File drop zone */
+    .file-zone{border:2px dashed var(--border);border-radius:10px;padding:20px;
+      text-align:center;cursor:pointer;transition:border-color .2s,background .2s;position:relative}
+    .file-zone:hover,.file-zone.drag{border-color:var(--accent);background:rgba(108,99,255,.06)}
+    .file-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+    .file-zone-icon{font-size:28px;margin-bottom:6px}
+    .file-zone-text{font-size:13px;color:var(--muted)}
+    .file-zone-text strong{color:var(--accent)}
+    .file-chosen{margin-top:8px;font-size:12px;color:var(--green);font-family:'Space Mono',monospace;display:none}
+
+    .btn-submit{width:100%;background:linear-gradient(135deg,var(--accent),#8b83ff);
+      border:none;border-radius:10px;padding:14px;font-size:15px;font-weight:700;
+      font-family:'Syne',sans-serif;color:#fff;cursor:pointer;margin-top:4px;
+      transition:opacity .2s,transform .1s}
+    .btn-submit:hover{opacity:.9;transform:translateY(-1px)}
+
+    /* Success ticket card */
+    .ticket-result{background:var(--surface2);border:1px solid var(--border);border-radius:12px;
+      padding:20px;margin-top:20px;animation:slideUp .4s ease both}
+    .ticket-result h3{font-size:14px;color:var(--green);margin-bottom:12px;font-family:'Space Mono',monospace}
+    .result-row{display:flex;justify-content:space-between;padding:7px 0;
+      border-bottom:1px solid var(--border);font-size:13px}
+    .result-row:last-child{border-bottom:none}
+    .result-key{color:var(--muted);font-family:'Space Mono',monospace;font-size:11px}
+
+    .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;font-family:'Space Mono',monospace}
+    .badge-High{background:rgba(255,77,109,.15);color:var(--red)}
+    .badge-Medium{background:rgba(249,202,36,.15);color:#f9ca24}
+    .badge-Low{background:rgba(67,233,123,.15);color:var(--green)}
+
+    .error-msg{background:rgba(255,77,109,.12);border:1px solid rgba(255,77,109,.3);
+      border-radius:8px;padding:10px 14px;font-size:13px;color:var(--red);
+      margin-bottom:16px;font-family:'Space Mono',monospace}
+
+    .admin-link{display:block;text-align:center;margin-top:20px;font-size:12px;
+      color:var(--muted);font-family:'Space Mono',monospace}
+    .admin-link a{color:var(--accent);text-decoration:none}
+    .admin-link a:hover{text-decoration:underline}
+  </style>
+</head>
+<body>
+  <div class="orb orb1"></div>
+  <div class="orb orb2"></div>
+
+  <div class="card">
+    <div class="brand">
+      <div class="brand-icon">🎫</div>
+      <div>
+        <h1>HelpDesk</h1>
+        <p>SUPPORT TICKET SYSTEM</p>
+      </div>
+    </div>
+
+    {% if error %}
+    <div class="error-msg">⚠ {{ error }}</div>
+    {% endif %}
+
+    <form method="POST" action="/submit" enctype="multipart/form-data">
+      <div class="form-group">
+        <label>Full Name *</label>
+        <input type="text" name="name" placeholder="Your name" required/>
+      </div>
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" name="email" placeholder="you@company.com"/>
+      </div>
+      <div class="form-group">
+        <label>Category</label>
+        <select name="category">
+          <option>Hardware</option>
+          <option>Software</option>
+          <option>Network</option>
+          <option>Access / Login</option>
+          <option>Email</option>
+          <option>Printer</option>
+          <option>General</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Describe Your Issue *</label>
+        <textarea name="issue" placeholder="Describe the problem in detail…" required></textarea>
+      </div>
+      <div class="form-group">
+        <label>Attachment (optional)</label>
+        <div class="file-zone" id="fileZone">
+          <input type="file" name="attachment" accept=".png,.jpg,.jpeg,.gif,.pdf,.txt,.docx,.xlsx"
+                 onchange="showFileName(this)"/>
+          <div class="file-zone-icon">📎</div>
+          <div class="file-zone-text">Drop a file or <strong>click to browse</strong></div>
+          <div class="file-zone-text" style="font-size:11px;margin-top:4px">PNG, JPG, PDF, DOCX, XLSX</div>
+          <div class="file-chosen" id="fileChosen"></div>
+        </div>
+      </div>
+      <button type="submit" class="btn-submit">Submit Ticket →</button>
+    </form>
+
+    {% if ticket %}
+    <div class="ticket-result">
+      <h3>✅ Ticket #{{ ticket.id }} Submitted</h3>
+      <div class="result-row"><span class="result-key">Status</span><span>Open</span></div>
+      <div class="result-row"><span class="result-key">Priority</span><span class="badge badge-{{ ticket.priority }}">{{ ticket.priority }}</span></div>
+      <div class="result-row"><span class="result-key">Category</span><span>{{ ticket.category }}</span></div>
+      <div class="result-row"><span class="result-key">AI Suggestion</span></div>
+      <div style="font-size:13px;color:var(--muted);line-height:1.6;margin-top:4px">{{ ticket.ai_suggestion }}</div>
+    </div>
+    {% endif %}
+
+    <div class="admin-link">Admin? <a href="/login">Sign in to the admin panel →</a></div>
+  </div>
+
+  <script>
+    function showFileName(input) {
+      const el = document.getElementById('fileChosen');
+      if (input.files.length) {
+        el.textContent = '✓ ' + input.files[0].name;
+        el.style.display = 'block';
+      }
+    }
+    // Drag styling
+    const zone = document.getElementById('fileZone');
+    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('drag'));
+    zone.addEventListener('drop', () => zone.classList.remove('drag'));
+  </script>
+</body>
+</html>

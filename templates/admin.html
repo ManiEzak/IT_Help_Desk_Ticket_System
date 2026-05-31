@@ -1,0 +1,352 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Admin Panel — HelpDesk</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg:#0f0e17; --surface:#1a1928; --surface2:#1e1d2e;
+      --border:#252438; --accent:#6c63ff; --accent2:#ff6584;
+      --green:#43e97b; --yellow:#f9ca24; --red:#ff4d6d; --blue:#4facfe;
+      --orange:#ff9a3c; --text:#e8e8f0; --muted:#6b6b80;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh}
+
+    /* ── Navbar ── */
+    .navbar{background:var(--surface);border-bottom:1px solid var(--border);
+      padding:14px 28px;display:flex;align-items:center;justify-content:space-between;
+      position:sticky;top:0;z-index:100}
+    .brand{display:flex;align-items:center;gap:12px}
+    .brand-icon{width:38px;height:38px;background:linear-gradient(135deg,var(--accent),var(--accent2));
+      border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px}
+    .brand-name{font-size:18px;font-weight:800}
+    .brand-sub{font-size:10px;color:var(--muted);font-family:'Space Mono',monospace;letter-spacing:1px}
+    .nav-right{display:flex;align-items:center;gap:10px}
+
+    /* ── Tabs ── */
+    .tabs{display:flex;gap:4px;padding:20px 28px 0;border-bottom:1px solid var(--border)}
+    .tab{padding:10px 22px;border-radius:8px 8px 0 0;border:1px solid transparent;
+      font-size:13px;font-weight:600;cursor:pointer;color:var(--muted);background:none;
+      transition:all .2s;font-family:'Syne',sans-serif}
+    .tab.active{background:var(--surface);border-color:var(--border);border-bottom-color:var(--bg);color:var(--text)}
+    .tab:hover:not(.active){color:var(--text)}
+    .tab-content{display:none;padding:24px 28px}
+    .tab-content.active{display:block}
+
+    /* ── Buttons ── */
+    .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;
+      border:none;font-size:13px;font-family:'Syne',sans-serif;font-weight:600;
+      cursor:pointer;text-decoration:none;transition:opacity .2s,transform .1s}
+    .btn:hover{opacity:.85;transform:translateY(-1px)}
+    .btn-excel{background:#1d6f42;color:#fff}
+    .btn-logout{background:rgba(255,77,109,.15);color:var(--red);border:1px solid rgba(255,77,109,.3)}
+    .btn-primary{background:var(--accent);color:#fff}
+    .btn-sm{padding:5px 11px;font-size:12px;border-radius:6px}
+    .btn-ghost{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+
+    /* ── Stats ── */
+    .stats-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:24px}
+    .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;
+      padding:18px 20px;position:relative;overflow:hidden}
+    .stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+    .stat-card.total::before{background:var(--accent)}
+    .stat-card.open::before{background:var(--blue)}
+    .stat-card.resolved::before{background:var(--green)}
+    .stat-card.high::before{background:var(--red)}
+    .stat-card.breached::before{background:var(--orange)}
+    .stat-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-family:'Space Mono',monospace}
+    .stat-value{font-size:32px;font-weight:800;margin-top:4px}
+    .stat-card.total .stat-value{color:var(--accent)}
+    .stat-card.open .stat-value{color:var(--blue)}
+    .stat-card.resolved .stat-value{color:var(--green)}
+    .stat-card.high .stat-value{color:var(--red)}
+    .stat-card.breached .stat-value{color:var(--orange)}
+
+    /* ── Charts ── */
+    .charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+    .chart-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px}
+    .chart-title{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;
+      letter-spacing:.8px;font-family:'Space Mono',monospace;margin-bottom:16px}
+    .chart-card canvas{max-height:220px}
+    .chart-full{grid-column:1/-1}
+
+    /* ── Filters ── */
+    .filters{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+    .filters form{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .filter-input{background:var(--surface);border:1px solid var(--border);border-radius:8px;
+      padding:9px 14px;font-size:13px;font-family:'Syne',sans-serif;color:var(--text);outline:none}
+    .filter-input:focus{border-color:var(--accent)}
+    .filter-input option{background:var(--surface)}
+
+    /* ── Table ── */
+    .table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+    table{width:100%;border-collapse:collapse}
+    thead{background:var(--surface2)}
+    th{padding:13px 14px;text-align:left;font-size:10px;font-family:'Space Mono',monospace;
+      font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);
+      border-bottom:1px solid var(--border)}
+    td{padding:12px 14px;font-size:13px;border-bottom:1px solid var(--border);vertical-align:middle}
+    tr:last-child td{border-bottom:none}
+    tr:hover td{background:rgba(108,99,255,.04)}
+
+    /* ── SLA bar ── */
+    .sla-bar-wrap{width:80px}
+    .sla-bar{height:5px;border-radius:3px;background:var(--border);margin-bottom:4px;overflow:hidden}
+    .sla-fill{height:100%;border-radius:3px;transition:width .4s}
+    .sla-ok .sla-fill{background:var(--green)}
+    .sla-warn .sla-fill{background:var(--yellow)}
+    .sla-breach .sla-fill{background:var(--red)}
+    .sla-label{font-size:10px;font-family:'Space Mono',monospace;white-space:nowrap}
+    .sla-ok .sla-label{color:var(--green)}
+    .sla-warn .sla-label{color:var(--yellow)}
+    .sla-breach .sla-label{color:var(--red)}
+
+    /* ── Badges ── */
+    .badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;
+      font-weight:700;font-family:'Space Mono',monospace}
+    .badge-High{background:rgba(255,77,109,.15);color:var(--red)}
+    .badge-Medium{background:rgba(249,202,36,.15);color:var(--yellow)}
+    .badge-Low{background:rgba(67,233,123,.15);color:var(--green)}
+    .badge-Open{background:rgba(79,172,254,.15);color:var(--blue)}
+    .badge-InProgress{background:rgba(249,202,36,.15);color:var(--yellow)}
+    .badge-Resolved{background:rgba(67,233,123,.15);color:var(--green)}
+    .badge-Closed{background:rgba(107,107,128,.2);color:var(--muted)}
+
+    .ticket-id{font-family:'Space Mono',monospace;color:var(--accent);font-weight:700}
+    .ticket-name{font-weight:600;font-size:13px}
+    .ticket-email{font-size:11px;color:var(--muted);font-family:'Space Mono',monospace}
+    .attach-link{font-size:11px;color:var(--accent);text-decoration:none}
+    .attach-link:hover{text-decoration:underline}
+    .breached-row td{background:rgba(255,77,109,.04)!important}
+
+    .empty-state{text-align:center;padding:60px;color:var(--muted)}
+    .empty-state .icon{font-size:40px;margin-bottom:12px}
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="brand">
+    <div class="brand-icon">🎫</div>
+    <div>
+      <div class="brand-name">HelpDesk</div>
+      <div class="brand-sub">ADMIN PANEL</div>
+    </div>
+  </div>
+  <div class="nav-right">
+    {% if excel_available %}
+    <a href="/admin/export/excel" class="btn btn-excel">⬇ Export Excel</a>
+    {% endif %}
+    <a href="/logout" class="btn btn-logout">⏻ Logout</a>
+  </div>
+</nav>
+
+<!-- ── Tabs ── -->
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('tickets',this)">🎫 Tickets</button>
+  <button class="tab" onclick="switchTab('dashboard',this)">📊 Dashboard</button>
+</div>
+
+<!-- ══════════════════════════════════════════
+     TAB: TICKETS
+══════════════════════════════════════════ -->
+<div id="tab-tickets" class="tab-content active">
+
+  <!-- Stats -->
+  <div class="stats-grid">
+    <div class="stat-card total"><div class="stat-label">Total</div><div class="stat-value">{{ stats.total }}</div></div>
+    <div class="stat-card open"><div class="stat-label">Open</div><div class="stat-value">{{ stats.open }}</div></div>
+    <div class="stat-card resolved"><div class="stat-label">Resolved</div><div class="stat-value">{{ stats.resolved }}</div></div>
+    <div class="stat-card high"><div class="stat-label">High Priority</div><div class="stat-value">{{ stats.high }}</div></div>
+    <div class="stat-card breached"><div class="stat-label">SLA Breached</div><div class="stat-value">{{ stats.breached }}</div></div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters">
+    <form method="GET" action="/admin">
+      <input class="filter-input" type="text" name="search" placeholder="🔍 Search…" value="{{ search }}"/>
+      <select class="filter-input" name="status">
+        {% for s in ["All","Open","In Progress","Resolved","Closed"] %}
+        <option value="{{ s }}" {% if status_filter==s %}selected{% endif %}>{{ s }}</option>
+        {% endfor %}
+      </select>
+      <select class="filter-input" name="priority">
+        {% for p in ["All","High","Medium","Low"] %}
+        <option value="{{ p }}" {% if priority_filter==p %}selected{% endif %}>{{ p }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+      <a href="/admin" class="btn btn-ghost btn-sm">Reset</a>
+    </form>
+  </div>
+
+  <!-- Table -->
+  <div class="table-wrap">
+    {% if tickets %}
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Date</th>
+          <th>User</th>
+          <th>Category</th>
+          <th>Priority</th>
+          <th>Status</th>
+          <th>SLA ({{ sla_hours }}h)</th>
+          <th>Attachment</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in tickets %}
+        {% set sla = t._sla %}
+        {% set sla_class = 'sla-breach' if sla.breached else ('sla-warn' if sla.percent > 70 else 'sla-ok') %}
+        <tr {% if sla.breached %}class="breached-row"{% endif %}>
+          <td>
+            <a href="/admin/ticket/{{ t.id }}" style="text-decoration:none">
+              <span class="ticket-id">#{{ t.id }}</span>
+            </a>
+            {% if t.comments %}<span style="font-size:10px;color:var(--accent)"> 💬{{ t.comments|length }}</span>{% endif %}
+          </td>
+          <td style="font-size:11px;color:var(--muted);white-space:nowrap">{{ t.created_at }}</td>
+          <td>
+            <div class="ticket-name">{{ t.name }}</div>
+            {% if t.email %}<div class="ticket-email">{{ t.email }}</div>{% endif %}
+          </td>
+          <td style="font-size:12px">{{ t.category }}</td>
+          <td><span class="badge badge-{{ t.priority }}">{{ t.priority }}</span></td>
+          <td><span class="badge badge-{{ t.status.replace(' ','') }}">{{ t.status }}</span></td>
+          <td>
+            <div class="sla-bar-wrap {{ sla_class }}">
+              <div class="sla-bar"><div class="sla-fill" style="width:{{ sla.percent }}%"></div></div>
+              <div class="sla-label">{{ sla.time_left_str }}</div>
+            </div>
+          </td>
+          <td>
+            {% if t.attachment %}
+              <a class="attach-link" href="/uploads/{{ t.attachment.saved }}" target="_blank">
+                📎 {{ t.attachment.original[:20] }}{% if t.attachment.original|length > 20 %}…{% endif %}
+              </a>
+            {% else %}
+              <span style="color:var(--muted);font-size:11px">—</span>
+            {% endif %}
+          </td>
+          <td>
+            <a href="/admin/ticket/{{ t.id }}" class="btn btn-primary btn-sm">View</a>
+            <form method="POST" action="/admin/delete/{{ t.id }}" style="display:inline;margin-left:4px"
+                  onsubmit="return confirm('Delete #{{ t.id }}?')">
+              <button type="submit" class="btn btn-logout btn-sm">Del</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state"><div class="icon">📭</div><p>No tickets found.</p></div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     TAB: DASHBOARD
+══════════════════════════════════════════ -->
+<div id="tab-dashboard" class="tab-content">
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-title">Tickets by Status</div>
+      <canvas id="chartStatus"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Tickets by Priority</div>
+      <canvas id="chartPriority"></canvas>
+    </div>
+    <div class="chart-card chart-full">
+      <div class="chart-title">Ticket Volume — Last 7 Days</div>
+      <canvas id="chartTrend" style="max-height:180px"></canvas>
+    </div>
+    <div class="chart-card chart-full">
+      <div class="chart-title">Tickets by Category</div>
+      <canvas id="chartCategory" style="max-height:180px"></canvas>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Tab switching ─────────────────────────────────────────────────────────────
+function switchTab(name, el) {
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  el.classList.add('active');
+}
+
+// ── Chart colours ─────────────────────────────────────────────────────────────
+const PALETTE = ['#6c63ff','#ff6584','#43e97b','#f9ca24','#4facfe','#ff9a3c','#a29bfe','#fd79a8'];
+const chartDefaults = {
+  plugins: { legend: { labels: { color:'#e8e8f0', font:{ family:'Space Mono', size:11 } } } },
+  scales: {
+    x: { ticks:{ color:'#6b6b80' }, grid:{ color:'rgba(255,255,255,0.05)' } },
+    y: { ticks:{ color:'#6b6b80' }, grid:{ color:'rgba(255,255,255,0.05)' }, beginAtZero:true }
+  }
+};
+
+const RAW = {{ chart_data|safe }};
+
+// Status — Doughnut
+new Chart(document.getElementById('chartStatus'), {
+  type:'doughnut',
+  data:{
+    labels: RAW.status.labels,
+    datasets:[{ data:RAW.status.data, backgroundColor:PALETTE, borderWidth:0, hoverOffset:8 }]
+  },
+  options:{ plugins: chartDefaults.plugins, cutout:'65%' }
+});
+
+// Priority — Doughnut
+new Chart(document.getElementById('chartPriority'), {
+  type:'doughnut',
+  data:{
+    labels: RAW.priority.labels,
+    datasets:[{ data:RAW.priority.data,
+      backgroundColor:['#ff4d6d','#f9ca24','#43e97b'], borderWidth:0, hoverOffset:8 }]
+  },
+  options:{ plugins: chartDefaults.plugins, cutout:'65%' }
+});
+
+// Trend — Line
+new Chart(document.getElementById('chartTrend'), {
+  type:'line',
+  data:{
+    labels: RAW.trend.labels,
+    datasets:[{
+      label:'Tickets',
+      data: RAW.trend.data,
+      borderColor:'#6c63ff', backgroundColor:'rgba(108,99,255,0.15)',
+      fill:true, tension:0.4, pointRadius:4, pointBackgroundColor:'#6c63ff'
+    }]
+  },
+  options:{ ...chartDefaults }
+});
+
+// Category — Bar
+new Chart(document.getElementById('chartCategory'), {
+  type:'bar',
+  data:{
+    labels: RAW.category.labels,
+    datasets:[{
+      label:'Tickets',
+      data: RAW.category.data,
+      backgroundColor: PALETTE,
+      borderRadius:6
+    }]
+  },
+  options:{ ...chartDefaults, plugins:{ ...chartDefaults.plugins, legend:{display:false} } }
+});
+</script>
+</body>
+</html>

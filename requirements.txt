@@ -1,0 +1,12 @@
+# requirements.txt
+# ─────────────────────────────────────────────────────────────────
+# These are the two Python packages your project needs.
+# Install them by running:
+#
+#   pip install -r requirements.txt
+#
+# That's it. SQLite is built into Python — no install needed.
+# ─────────────────────────────────────────────────────────────────
+
+flask>=3.0.0
+anthropic>=0.25.0

@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Ticket #{{ ticket.id }} — HelpDesk</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet"/>
+  <style>
+    :root{
+      --bg:#0f0e17;--surface:#1a1928;--surface2:#1e1d2e;
+      --border:#252438;--accent:#6c63ff;--accent2:#ff6584;
+      --green:#43e97b;--yellow:#f9ca24;--red:#ff4d6d;--blue:#4facfe;
+      --orange:#ff9a3c;--text:#e8e8f0;--muted:#6b6b80;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh}
+
+    .navbar{background:var(--surface);border-bottom:1px solid var(--border);
+      padding:14px 28px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:100}
+    .back{color:var(--muted);text-decoration:none;font-size:13px;font-family:'Space Mono',monospace}
+    .back:hover{color:var(--text)}
+    .nav-title{font-size:16px;font-weight:800;color:var(--text)}
+    .nav-id{font-family:'Space Mono',monospace;color:var(--accent)}
+
+    .page{max-width:960px;margin:32px auto;padding:0 24px;display:grid;grid-template-columns:1fr 340px;gap:20px}
+
+    /* ── Card ── */
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px}
+    .card-title{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;
+      letter-spacing:.8px;font-family:'Space Mono',monospace;margin-bottom:18px;
+      padding-bottom:12px;border-bottom:1px solid var(--border)}
+
+    /* ── Issue block ── */
+    .issue-text{font-size:15px;line-height:1.7;color:var(--text);margin-bottom:20px}
+    .ai-box{background:rgba(108,99,255,.1);border:1px solid rgba(108,99,255,.2);
+      border-radius:10px;padding:14px 16px}
+    .ai-label{font-size:10px;font-family:'Space Mono',monospace;color:var(--accent);
+      font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+    .ai-text{font-size:13px;line-height:1.6;color:var(--text)}
+
+    /* ── SLA ── */
+    .sla-big{margin-bottom:16px}
+    .sla-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+    .sla-title-label{font-size:12px;font-weight:700;color:var(--muted);font-family:'Space Mono',monospace}
+    .sla-time{font-size:13px;font-weight:700}
+    .sla-ok .sla-time{color:var(--green)}
+    .sla-warn .sla-time{color:var(--yellow)}
+    .sla-breach .sla-time{color:var(--red)}
+    .sla-track{height:8px;background:var(--border);border-radius:4px;overflow:hidden;margin-bottom:6px}
+    .sla-fill{height:100%;border-radius:4px;transition:width .5s}
+    .sla-ok .sla-fill{background:var(--green)}
+    .sla-warn .sla-fill{background:var(--yellow)}
+    .sla-breach .sla-fill{background:var(--red)}
+    .sla-sub{font-size:11px;color:var(--muted);font-family:'Space Mono',monospace}
+
+    /* ── Meta rows ── */
+    .meta-row{display:flex;justify-content:space-between;align-items:center;
+      padding:10px 0;border-bottom:1px solid var(--border);font-size:13px}
+    .meta-row:last-child{border-bottom:none}
+    .meta-key{color:var(--muted);font-family:'Space Mono',monospace;font-size:11px}
+
+    /* ── Badges ── */
+    .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;font-family:'Space Mono',monospace}
+    .badge-High{background:rgba(255,77,109,.15);color:var(--red)}
+    .badge-Medium{background:rgba(249,202,36,.15);color:var(--yellow)}
+    .badge-Low{background:rgba(67,233,123,.15);color:var(--green)}
+    .badge-Open{background:rgba(79,172,254,.15);color:var(--blue)}
+    .badge-InProgress{background:rgba(249,202,36,.15);color:var(--yellow)}
+    .badge-Resolved{background:rgba(67,233,123,.15);color:var(--green)}
+    .badge-Closed{background:rgba(107,107,128,.2);color:var(--muted)}
+
+    /* ── Update form ── */
+    .update-form{display:flex;flex-direction:column;gap:10px}
+    .form-label{font-size:11px;color:var(--muted);font-family:'Space Mono',monospace;
+      text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px}
+    .form-select,.form-input{width:100%;background:var(--bg);border:1px solid var(--border);
+      border-radius:8px;padding:10px 12px;font-size:13px;font-family:'Syne',sans-serif;
+      color:var(--text);outline:none}
+    .form-select:focus,.form-input:focus{border-color:var(--accent)}
+    .form-select option{background:var(--bg)}
+
+    /* ── Comments ── */
+    .comment-list{display:flex;flex-direction:column;gap:12px;margin-bottom:20px}
+    .comment{border-radius:10px;padding:12px 14px;font-size:13px;line-height:1.6}
+    .comment.internal{background:rgba(108,99,255,.08);border:1px solid rgba(108,99,255,.15)}
+    .comment.reply{background:rgba(67,233,123,.07);border:1px solid rgba(67,233,123,.15)}
+    .comment-meta{display:flex;justify-content:space-between;margin-bottom:6px}
+    .comment-author{font-weight:700;font-size:12px;
+      color:var(--accent)}
+    .comment.reply .comment-author{color:var(--green)}
+    .comment-ts{font-size:10px;color:var(--muted);font-family:'Space Mono',monospace}
+    .comment-type-badge{font-size:9px;padding:2px 6px;border-radius:10px;font-family:'Space Mono',monospace;font-weight:700}
+    .comment.internal .comment-type-badge{background:rgba(108,99,255,.2);color:var(--accent)}
+    .comment.reply .comment-type-badge{background:rgba(67,233,123,.2);color:var(--green)}
+    .comment-text{color:var(--text)}
+
+    /* ── Comment form ── */
+    .comment-form{display:flex;flex-direction:column;gap:10px}
+    .comment-tabs{display:flex;gap:6px;margin-bottom:4px}
+    .ctab{padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:none;
+      font-size:11px;font-family:'Space Mono',monospace;color:var(--muted);cursor:pointer}
+    .ctab.active{background:var(--accent);border-color:var(--accent);color:#fff}
+    textarea{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;
+      padding:10px 12px;font-size:13px;font-family:'Syne',sans-serif;color:var(--text);
+      outline:none;resize:vertical;min-height:80px}
+    textarea:focus{border-color:var(--accent)}
+
+    /* ── Attachment ── */
+    .attach-box{background:var(--surface2);border:1px solid var(--border);border-radius:8px;
+      padding:10px 14px;display:flex;align-items:center;gap:10px}
+    .attach-icon{font-size:22px}
+    .attach-name{font-size:12px;color:var(--text);font-weight:600}
+    .attach-link{color:var(--accent);font-size:11px;text-decoration:none}
+    .attach-link:hover{text-decoration:underline}
+
+    .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;
+      border:none;font-size:13px;font-family:'Syne',sans-serif;font-weight:600;
+      cursor:pointer;text-decoration:none;transition:opacity .2s,transform .1s;width:100%;justify-content:center}
+    .btn:hover{opacity:.85;transform:translateY(-1px)}
+    .btn-primary{background:var(--accent);color:#fff}
+    .btn-green{background:rgba(67,233,123,.15);color:var(--green);border:1px solid rgba(67,233,123,.25)}
+
+    @media(max-width:768px){.page{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="/admin" class="back">← Back</a>
+  <div class="nav-title">Ticket <span class="nav-id">#{{ ticket.id }}</span></div>
+</nav>
+
+{% set sla = ticket._sla %}
+{% set sla_class = 'sla-breach' if sla.breached else ('sla-warn' if sla.percent > 70 else 'sla-ok') %}
+
+<div class="page">
+  <!-- ── LEFT COLUMN ── -->
+  <div style="display:flex;flex-direction:column;gap:20px">
+
+    <!-- Issue -->
+    <div class="card">
+      <div class="card-title">🐛 Issue Description</div>
+      <div class="issue-text">{{ ticket.issue }}</div>
+      {% if ticket.ai_suggestion %}
+      <div class="ai-box">
+        <div class="ai-label">🤖 AI Suggestion</div>
+        <div class="ai-text">{{ ticket.ai_suggestion }}</div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Attachment -->
+    {% if ticket.attachment %}
+    <div class="card">
+      <div class="card-title">📎 Attachment</div>
+      <div class="attach-box">
+        <div class="attach-icon">
+          {% if ticket.attachment.ext in ['png','jpg','jpeg','gif'] %}🖼️
+          {% elif ticket.attachment.ext == 'pdf' %}📄
+          {% else %}📁{% endif %}
+        </div>
+        <div>
+          <div class="attach-name">{{ ticket.attachment.original }}</div>
+          <a class="attach-link" href="/uploads/{{ ticket.attachment.saved }}" target="_blank">Download / View →</a>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Comments -->
+    <div class="card">
+      <div class="card-title">💬 Comments & Notes</div>
+
+      {% if ticket.comments %}
+      <div class="comment-list">
+        {% for c in ticket.comments %}
+        <div class="comment {{ c.type }}">
+          <div class="comment-meta">
+            <span class="comment-author">{{ c.author }}
+              <span class="comment-type-badge">{{ '🔒 Internal' if c.type=='internal' else '📤 Reply to User' }}</span>
+            </span>
+            <span class="comment-ts">{{ c.timestamp }}</span>
+          </div>
+          <div class="comment-text">{{ c.text }}</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p style="color:var(--muted);font-size:13px;margin-bottom:16px">No comments yet.</p>
+      {% endif %}
+
+      <!-- Add comment form -->
+      <form method="POST" action="/admin/ticket/{{ ticket.id }}/comment" class="comment-form">
+        <div class="comment-tabs">
+          <button type="button" class="ctab active" onclick="setType('internal',this)">🔒 Internal Note</button>
+          <button type="button" class="ctab" onclick="setType('reply',this)">📤 Reply to User</button>
+        </div>
+        <input type="hidden" name="comment_type" id="commentType" value="internal"/>
+        <textarea name="comment" placeholder="Write a note or reply…" required></textarea>
+        <button type="submit" class="btn btn-primary">Add Comment</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── RIGHT COLUMN ── -->
+  <div style="display:flex;flex-direction:column;gap:20px">
+
+    <!-- SLA -->
+    <div class="card">
+      <div class="card-title">⏱ SLA Status ({{ sla_hours }}h target)</div>
+      <div class="sla-big {{ sla_class }}">
+        <div class="sla-header">
+          <span class="sla-title-label">{{ sla.hours_elapsed }}h elapsed</span>
+          <span class="sla-time">{{ sla.time_left_str }}</span>
+        </div>
+        <div class="sla-track">
+          <div class="sla-fill" style="width:{{ sla.percent }}%"></div>
+        </div>
+        <div class="sla-sub">{{ sla.percent }}% of SLA used
+          {% if sla.breached %} — AUTO-ESCALATED TO HIGH{% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Meta -->
+    <div class="card">
+      <div class="card-title">ℹ️ Ticket Info</div>
+      <div class="meta-row"><span class="meta-key">Submitted</span><span>{{ ticket.created_at }}</span></div>
+      <div class="meta-row"><span class="meta-key">Name</span><span style="font-weight:600">{{ ticket.name }}</span></div>
+      <div class="meta-row"><span class="meta-key">Email</span><span style="font-size:12px;font-family:'Space Mono',monospace">{{ ticket.email or '—' }}</span></div>
+      <div class="meta-row"><span class="meta-key">Category</span><span>{{ ticket.category }}</span></div>
+      <div class="meta-row"><span class="meta-key">Priority</span><span class="badge badge-{{ ticket.priority }}">{{ ticket.priority }}</span></div>
+      <div class="meta-row"><span class="meta-key">Status</span><span class="badge badge-{{ ticket.status.replace(' ','') }}">{{ ticket.status }}</span></div>
+      <div class="meta-row"><span class="meta-key">Assigned To</span><span>{{ ticket.assigned_to or 'Unassigned' }}</span></div>
+    </div>
+
+    <!-- Update -->
+    <div class="card">
+      <div class="card-title">✏️ Update Ticket</div>
+      <form method="POST" action="/admin/update/{{ ticket.id }}" class="update-form">
+        <input type="hidden" name="ref" value="detail"/>
+        <div>
+          <div class="form-label">Status</div>
+          <select class="form-select" name="status">
+            {% for s in ["Open","In Progress","Resolved","Closed"] %}
+            <option value="{{ s }}" {% if ticket.status==s %}selected{% endif %}>{{ s }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <div class="form-label">Assign To (agent name)</div>
+          <input class="form-input" type="text" name="assigned_to"
+                 placeholder="e.g. Priya, Team A…"
+                 value="{{ ticket.assigned_to or '' }}"/>
+        </div>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+      </form>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function setType(type, el) {
+  document.getElementById('commentType').value = type;
+  document.querySelectorAll('.ctab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+}
+</script>
+</body>
+</html>
