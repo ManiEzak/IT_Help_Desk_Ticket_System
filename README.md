@@ -9,7 +9,6 @@ AI-powered IT Help Desk Ticket System built with Python, Flask, SQLite, and Groq
 - Ticket Management System
 - Admin Dashboard
 - Ticket Status Tracking
-- SQLite Database Integration
 - Responsive Web Interface
 - Fast Issue Resolution
 - Ticket History Tracking
@@ -18,7 +17,6 @@ AI-powered IT Help Desk Ticket System built with Python, Flask, SQLite, and Groq
 
 - Python
 - Flask
-- SQLite
 - Groq AI
 - HTML
 - CSS
